@@ -6,10 +6,15 @@ using System.Threading.Tasks;
 
 namespace MaxDB
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
+            while (true)
+            {
+                string input = Console.ReadLine().Trim().ToLower();
+                Sql.Parse(input);
+            }
         }
     }
 }
