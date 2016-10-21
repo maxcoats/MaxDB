@@ -153,14 +153,14 @@ namespace MaxDB
                         CurrentDatabase.CreateTable(tableName);
                         Table table = CurrentDatabase.GetTable(tableName);
 
-                        string block = null;
+                        //string block = null;
 
                         if (BeginBlock())
                         {
                             SwitchDigestBlock();
-                            block = GetBlock();
+                            //block = GetBlock();
 
-                            while (block.Contains(','))
+                            while (Digest.Contains(','))
                             {
                                 string columnString = GetNextDigestSegment(',');
                             }
@@ -213,6 +213,8 @@ namespace MaxDB
             {
                 Digest = null;
             }
+
+            Digests.Add(block);
         }
 
         private static string GetBlock()
