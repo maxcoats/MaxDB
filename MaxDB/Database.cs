@@ -51,5 +51,20 @@ namespace MaxDB
         {
             return Tables.Select(s => s).Where(s => s.Name == name).FirstOrDefault();
         }
+
+        public void ShowTables()
+        {
+            if (Tables.Count > 0)
+            {
+                foreach (Table table in Tables)
+                {
+                    Console.WriteLine(table.Name);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No Tables found!");
+            }
+        }
     }
 }

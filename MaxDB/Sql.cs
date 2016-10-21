@@ -10,19 +10,50 @@ namespace MaxDB
     {
         public static Database CurrentDatabase { get; set; }
 
+        public static List<string> Digests { get; set; }
+
+        private static string Digest
+        {
+            get
+            {
+                string currentDigest = Digests.Select(s => s).LastOrDefault();
+                return currentDigest;
+            }
+            set
+            {
+                string currentDigest = Digests.Select(s => s).LastOrDefault();
+                Digests.Remove(currentDigest);
+                Digests.Add(value);
+            }
+        }
+
         static Sql()
         {
             CurrentDatabase = null;
+            Digests = new List<string>();
+            Digest = null;
         }
 
         public static void Parse(string sqlString)
         {
-            List<string> statements = GetStatements(sqlString);
+            List<string> statements = GetStatements(sqlString.Trim());
 
             foreach (string statement in statements)
             {
-                Execute(statement);
+                Execute(statement.Trim());
             }
+        }
+
+        internal static bool IsStatement(string input)
+        {
+            bool isStatement = false;
+
+            if (input.Contains(";"))
+            {
+                isStatement = true;
+            }
+
+            return isStatement;
         }
 
         private static List<string> GetStatements(string sqlString)
@@ -33,57 +64,112 @@ namespace MaxDB
             return statements.ToList();
         }
 
+        private static string GetNextDigestSegment(char end)
+        {
+            char[] delimeters = new char[] { end };
+            string[] segments = Digest.Split(delimeters, 2);
+
+            if (segments.Length > 1)
+            {
+                Digest = segments[1].Trim();
+            }
+            else
+            {
+                Digest = null;
+            }
+
+            return segments[0].Trim();
+        }
+
         private static void Execute(string statement)
         {
-            List<string> statementSegments = GetStatementSegments(statement);
-            string command = statementSegments.Select(s => s).FirstOrDefault();
-            statementSegments.Remove(command);
+            Digest = statement;
+            string command = GetNextDigestSegment(' ');
 
-            switch (command.Trim())
+            switch (command)
             {
                 case "create":
-                    Create(statementSegments);
+                    Create();
                     break;
 
                 case "drop":
-                    Drop(statementSegments);
+                    Drop();
                     break;
 
                 case "use":
-                    Use(statementSegments);
+                    Use();
+                    break;
+
+                case "show":
+                    Show();
                     break;
             }
         }
 
-        private static void Use(List<string> statementSegments)
+        private static void Show()
         {
-            string databaseName = GetNextStatementSegment(statementSegments);
+            string context = GetNextDigestSegment(' ');
+
+            switch (context)
+            {
+                case "databases":
+                    DatabaseCollection.ShowDatabases();
+                    break;
+
+                case "tables":
+                    if (CurrentDatabase != null)
+                    {
+                        CurrentDatabase.ShowTables();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Please select a database first.");
+                    }
+                    break;
+            }
+        }
+
+        private static void Use()
+        {
+            string databaseName = GetNextDigestSegment(' ');
 
             CurrentDatabase = DatabaseCollection.GetDatabase(databaseName);
         }
 
-        private static List<string> GetStatementSegments(string statement)
+        private static void Create()
         {
-            char[] delimeters = new char[] { ' ' };
-            string[] statementSegments = statement.Split(delimeters);
+            string context = GetNextDigestSegment(' ');
 
-            return statementSegments.ToList();
-        }
-
-        private static void Create(List<string> statementSegments)
-        {
-            string context = GetNextStatementSegment(statementSegments);
-
-            switch (context.Trim())
+            switch (context)
             {
                 case "database":
-                    DatabaseCollection.CreateDatabase(GetNextStatementSegment(statementSegments));
+                    DatabaseCollection.CreateDatabase(GetNextDigestSegment(' '));
                     break;
 
                 case "table":
                     if (CurrentDatabase != null)
                     {
-                        CurrentDatabase.CreateTable(GetNextStatementSegment(statementSegments));
+                        string tableName = GetNextDigestSegment(' ');
+                        CurrentDatabase.CreateTable(tableName);
+                        Table table = CurrentDatabase.GetTable(tableName);
+
+                        string block = null;
+
+                        if (BeginBlock())
+                        {
+                            SwitchDigestBlock();
+                            block = GetBlock();
+
+                            while (block.Contains(','))
+                            {
+                                string columnString = GetNextDigestSegment(',');
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Syntax Error!");
+                            CurrentDatabase.DropTable(tableName);
+                        }
                     }
                     else
                     {
@@ -93,21 +179,107 @@ namespace MaxDB
             }
         }
 
-        private static void Drop(List<string> statementSegments)
+        private static void SwitchDigestBlock()
         {
-            string context = statementSegments.Select(s => s).FirstOrDefault();
-            statementSegments.Remove(context);
+            string block = "";
+            int openParenthesesCount = 0;
+            int blockEndCharIndex = 0;
 
-            switch (context.Trim())
+            for (int i = 0; i < Digest.Length; i++)
+            {
+                if (Digest[i] == '(')
+                {
+                    openParenthesesCount++;
+                }
+                else if (Digest[i] == ')')
+                {
+                    openParenthesesCount--;
+                }
+
+                if (openParenthesesCount == 0)
+                {
+                    blockEndCharIndex = i;
+                    break;
+                }
+            }
+
+            block = Digest.Substring(1, blockEndCharIndex - 1).Trim();
+
+            if (Digest.Length > blockEndCharIndex + 1)
+            {
+                Digest = Digest.Substring(blockEndCharIndex + 1).Trim();
+            }
+            else
+            {
+                Digest = null;
+            }
+        }
+
+        private static string GetBlock()
+        {
+            string block = "";
+            int openParenthesesCount = 0;
+            int blockEndCharIndex = 0;
+
+            for (int i = 0; i < Digest.Length; i++)
+            {
+                if (Digest[i] == '(')
+                {
+                    openParenthesesCount++;
+                }
+                else if (Digest[i] == ')')
+                {
+                    openParenthesesCount--;
+                }
+
+                if (openParenthesesCount == 0)
+                {
+                    blockEndCharIndex = i;
+                    break;
+                }
+            }
+
+            block = Digest.Substring(1, blockEndCharIndex - 1).Trim();
+
+            if (Digest.Length > blockEndCharIndex + 1)
+            {
+                Digest = Digest.Substring(blockEndCharIndex + 1).Trim();
+            }
+            else
+            {
+                Digest = null;
+            }
+
+            return block;
+        }
+
+        private static bool BeginBlock()
+        {
+            bool beginBlock = false;
+            char firstChar = Digest[0];
+
+            if (firstChar == '(')
+            {
+                beginBlock = true;
+            }
+
+            return beginBlock;
+        }
+
+        private static void Drop()
+        {
+            string context = GetNextDigestSegment(' ');
+
+            switch (context)
             {
                 case "database":
-                    DatabaseCollection.DropDatabase(GetNextStatementSegment(statementSegments));
+                    DatabaseCollection.DropDatabase(GetNextDigestSegment(' '));
                     break;
 
                 case "table":
                     if (CurrentDatabase != null)
                     {
-                        CurrentDatabase.DropTable(GetNextStatementSegment(statementSegments));
+                        CurrentDatabase.DropTable(GetNextDigestSegment(' '));
                     }
                     else
                     {
@@ -115,14 +287,6 @@ namespace MaxDB
                     }
                     break;
             }
-        }
-
-        private static string GetNextStatementSegment(List<string> statementSegments)
-        {
-            string segment = statementSegments.Select(s => s).FirstOrDefault();
-            statementSegments.Remove(segment);
-
-            return segment.Trim();
         }
     }
 }

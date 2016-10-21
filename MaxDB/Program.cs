@@ -12,7 +12,13 @@ namespace MaxDB
         {
             while (true)
             {
-                string input = Console.ReadLine().Trim().ToLower();
+                string input = "";
+
+                while (!Sql.IsStatement(input))
+                {
+                    input += " " + Console.ReadLine().Trim().ToLower();
+                }
+
                 Sql.Parse(input);
             }
         }

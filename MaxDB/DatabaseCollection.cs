@@ -48,5 +48,20 @@ namespace MaxDB
         {
             return Databases.Select(s => s).Where(s => s.Name == name).FirstOrDefault();
         }
+
+        public static void ShowDatabases()
+        {
+            if (Databases.Count > 0)
+            {
+                foreach (Database database in Databases)
+                {
+                    Console.WriteLine(database.Name);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No Databases found!");
+            }
+        }
     }
 }

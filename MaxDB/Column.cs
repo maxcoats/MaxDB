@@ -12,6 +12,13 @@ namespace MaxDB
 
         public string DataType { get; set; }
 
-        public int DataLength { get; set; }
+        public int Size { get; set; }
+
+        public Column(string name, string dataType, int size)
+        {
+            Name = name;
+            DataType = dataType;
+            Size = size;
+        }
     }
 }
