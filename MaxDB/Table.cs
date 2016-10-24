@@ -54,5 +54,10 @@ namespace MaxDB
         {
             return Columns.Select(s => s).Where(s => s.Name == name).FirstOrDefault();
         }
+
+        public void InsertRow()
+        {
+
+        }
     }
 }

@@ -22,8 +22,16 @@ namespace MaxDB
             set
             {
                 string currentDigest = Digests.Select(s => s).LastOrDefault();
-                Digests.Remove(currentDigest);
-                Digests.Add(value);
+                
+                if (currentDigest != null)
+                {
+                    Digests.Remove(currentDigest);
+                }
+
+                if (value != null && value != "")
+                {
+                    Digests.Add(value);
+                }
             }
         }
 
@@ -48,9 +56,12 @@ namespace MaxDB
         {
             bool isStatement = false;
 
-            if (input.Contains(";"))
+            if (input != "")
             {
-                isStatement = true;
+                if (input[input.Length - 1] == ';')
+                {
+                    isStatement = true;
+                }
             }
 
             return isStatement;
@@ -81,27 +92,73 @@ namespace MaxDB
             return segments[0].Trim();
         }
 
+        private static string GetEndOfDigest()
+        {
+            string digest = Digest;
+            Digest = null;
+
+            return digest;
+        }
+
         private static void Execute(string statement)
         {
             Digest = statement;
-            string command = GetNextDigestSegment(' ');
 
-            switch (command)
+            if (Digest != null)
             {
-                case "create":
-                    Create();
-                    break;
+                string command = GetNextDigestSegment(' ');
+                Digest = Digest.Replace("(", " (");
 
-                case "drop":
-                    Drop();
-                    break;
+                switch (command)
+                {
+                    case "create":
+                        Create();
+                        break;
 
-                case "use":
-                    Use();
-                    break;
+                    case "drop":
+                        Drop();
+                        break;
 
-                case "show":
-                    Show();
+                    case "use":
+                        Use();
+                        break;
+
+                    case "show":
+                        Show();
+                        break;
+
+                    case "insert":
+                        if (GetNextDigestSegment(' ') == "into")
+                        {
+                            Insert();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Syntax Error!");
+                        }
+                        break;
+                }
+            }
+        }
+
+        private static void Insert()
+        {
+            string tableName = GetNextDigestSegment(' ');
+            Table table = CurrentDatabase.GetTable(tableName);
+            string context = null;
+
+            if (BeginScope('('))
+            {
+                context = "";
+            }
+            else
+            {
+                context = GetNextDigestSegment(' ');
+            }
+
+            switch (context)
+            {
+                case "values":
                     break;
             }
         }
@@ -153,16 +210,43 @@ namespace MaxDB
                         CurrentDatabase.CreateTable(tableName);
                         Table table = CurrentDatabase.GetTable(tableName);
 
-                        //string block = null;
-
-                        if (BeginBlock())
+                        if (ContainsScope('(', ')') && BeginScope('('))
                         {
-                            SwitchDigestBlock();
-                            //block = GetBlock();
+                            SwitchDigestScope('(', ')');
+                            Digest = Digest + ",";
+                            int columnsDigestIndex = Digests.IndexOf(Digest);
 
-                            while (Digest.Contains(','))
+                            while (Digests.Count > columnsDigestIndex)
                             {
-                                string columnString = GetNextDigestSegment(',');
+                                while (columnsDigestIndex < Digests.IndexOf(Digest))
+                                {
+                                    Digest = null;
+                                }
+
+                                if (Digests[columnsDigestIndex].Contains(','))
+                                {
+                                    string columnString = GetNextDigestSegment(',');
+                                    Digests.Add(columnString);
+                                    string columnName = GetNextDigestSegment(' ');
+                                    string columnDataType = GetNextDigestSegment(' ');
+                                    int columnSize = 0;
+
+                                    if (ContainsScope('(', ')') && BeginScope('('))
+                                    {
+                                        SwitchDigestScope('(', ')');
+                                        columnSize = int.Parse(GetEndOfDigest());
+
+                                        table.CreateColumn(columnName, columnDataType, columnSize);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Syntax Error!");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Syntax Error!");
+                                }
                             }
                         }
                         else
@@ -179,93 +263,79 @@ namespace MaxDB
             }
         }
 
-        private static void SwitchDigestBlock()
+        private static void SwitchDigestScope(char scopeStartChar, char scopeEndChar)
         {
-            string block = "";
-            int openParenthesesCount = 0;
-            int blockEndCharIndex = 0;
+            string scope = "";
+            int scopeStartCharCount = 0;
+            int scopeStartCharIndex = 0;
+            int scopeEndCharIndex = 0;
 
             for (int i = 0; i < Digest.Length; i++)
             {
-                if (Digest[i] == '(')
+                if (Digest[i] == scopeStartChar)
                 {
-                    openParenthesesCount++;
+                    if (scopeStartCharCount == 0)
+                    {
+                        scopeStartCharIndex = i;
+                    }
+
+                    scopeStartCharCount++;
                 }
-                else if (Digest[i] == ')')
+                else if (Digest[i] == scopeEndChar)
                 {
-                    openParenthesesCount--;
+                    scopeStartCharCount--;
                 }
 
-                if (openParenthesesCount == 0)
+                if (scopeStartCharCount == 0)
                 {
-                    blockEndCharIndex = i;
+                    scopeEndCharIndex = i;
                     break;
                 }
             }
 
-            block = Digest.Substring(1, blockEndCharIndex - 1).Trim();
+            scope = Digest.Substring(scopeStartCharIndex + 1, scopeEndCharIndex - 1).Trim();
 
-            if (Digest.Length > blockEndCharIndex + 1)
+            if (Digest.Length > scopeEndCharIndex + 1)
             {
-                Digest = Digest.Substring(blockEndCharIndex + 1).Trim();
+                Digest = Digest.Substring(scopeEndCharIndex + 1).Trim();
             }
             else
             {
                 Digest = null;
             }
 
-            Digests.Add(block);
+            Digests.Add(scope);
         }
 
-        private static string GetBlock()
+        private static bool ContainsScope(char scopeStartChar, char scopeEndChar)
         {
-            string block = "";
-            int openParenthesesCount = 0;
-            int blockEndCharIndex = 0;
-
-            for (int i = 0; i < Digest.Length; i++)
+            bool containsScope = false;
+            
+            if (scopeStartChar != scopeEndChar)
             {
-                if (Digest[i] == '(')
+                if (Digest.Contains(scopeStartChar.ToString()) && Digest.Contains(scopeEndChar.ToString()))
                 {
-                    openParenthesesCount++;
+                    containsScope = true;
                 }
-                else if (Digest[i] == ')')
+                else if (Digest.Substring(Digest.IndexOf(scopeStartChar) + 1).Contains(scopeEndChar))
                 {
-                    openParenthesesCount--;
-                }
-
-                if (openParenthesesCount == 0)
-                {
-                    blockEndCharIndex = i;
-                    break;
+                    containsScope = true;
                 }
             }
 
-            block = Digest.Substring(1, blockEndCharIndex - 1).Trim();
-
-            if (Digest.Length > blockEndCharIndex + 1)
-            {
-                Digest = Digest.Substring(blockEndCharIndex + 1).Trim();
-            }
-            else
-            {
-                Digest = null;
-            }
-
-            return block;
+            return containsScope;
         }
 
-        private static bool BeginBlock()
+        private static bool BeginScope(char scopeStartChar)
         {
-            bool beginBlock = false;
-            char firstChar = Digest[0];
+            bool beginScope = false;
 
-            if (firstChar == '(')
+            if (Digest[0] == scopeStartChar)
             {
-                beginBlock = true;
+                beginScope = true;
             }
 
-            return beginBlock;
+            return beginScope;
         }
 
         private static void Drop()
