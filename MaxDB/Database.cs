@@ -18,13 +18,24 @@ namespace MaxDB
             Tables = new List<Table>();
         }
 
+        public bool IsTable(string name)
+        {
+            bool isTable = false;
+            Table table = Tables.Where(s => s.Name == name).FirstOrDefault();
+
+            if (table != null)
+            {
+                isTable = true;
+            }
+
+            return isTable;
+        }
+
         public void CreateTable(string name)
         {
-            Table table = GetTable(name);
-
-            if (table == null)
+            if (!IsTable(name))
             {
-                table = new Table(name);
+                Table table = new Table(name);
                 Tables.Add(table);
             }
             else
@@ -43,13 +54,20 @@ namespace MaxDB
             }
             else
             {
-                Console.WriteLine("Failed to drop table! A table named " + name + " could not be found.");
+                Console.WriteLine("Failed to drop table " + name + "!");
             }
         }
 
         public Table GetTable(string name)
         {
-            return Tables.Select(s => s).Where(s => s.Name == name).FirstOrDefault();
+            Table table = Tables.Where(s => s.Name == name).FirstOrDefault();
+
+            if (table == null)
+            {
+                Console.WriteLine("Failed to find table " + name + "!");
+            }
+
+            return table;
         }
 
         public void ShowTables()

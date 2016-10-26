@@ -15,13 +15,24 @@ namespace MaxDB
             Databases = new List<Database>();
         }
 
+        public static bool IsDatabase(string name)
+        {
+            bool isDatabase = false;
+            Database database = Databases.Where(s => s.Name == name).FirstOrDefault();
+
+            if (database != null)
+            {
+                isDatabase = true;
+            }
+
+            return isDatabase;
+        }
+
         public static void CreateDatabase(string name)
         {
-            Database database = GetDatabase(name);
-
-            if (database == null)
+            if (!IsDatabase(name))
             {
-                database = new Database(name);
+                Database database = new Database(name);
                 Databases.Add(database);
             }
             else
@@ -40,13 +51,20 @@ namespace MaxDB
             }
             else
             {
-                Console.WriteLine("Failed to drop database! A database named " + name + " could not be found.");
+                Console.WriteLine("Failed to drop database " + name + "!");
             }
         }
 
         public static Database GetDatabase(string name)
         {
-            return Databases.Select(s => s).Where(s => s.Name == name).FirstOrDefault();
+            Database database = Databases.Where(s => s.Name == name).FirstOrDefault();
+
+            if (database == null)
+            {
+                Console.WriteLine("Failed to find database " + name + "!");
+            }
+
+            return database;
         }
 
         public static void ShowDatabases()

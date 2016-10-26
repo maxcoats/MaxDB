@@ -16,7 +16,7 @@ namespace MaxDB
 
                 while (!Sql.IsStatement(input))
                 {
-                    input += " " + Console.ReadLine().Trim().ToLower();
+                    input += " " + Console.ReadLine().Trim();
                 }
 
                 Sql.Parse(input);

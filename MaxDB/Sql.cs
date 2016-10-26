@@ -10,18 +10,20 @@ namespace MaxDB
     {
         public static Database CurrentDatabase { get; set; }
 
+        public static List<string> Output { get; set; }
+
         public static List<string> Digests { get; set; }
 
         private static string Digest
         {
             get
             {
-                string currentDigest = Digests.Select(s => s).LastOrDefault();
+                string currentDigest = Digests.LastOrDefault();
                 return currentDigest;
             }
             set
             {
-                string currentDigest = Digests.Select(s => s).LastOrDefault();
+                string currentDigest = Digests.LastOrDefault();
                 
                 if (currentDigest != null)
                 {
@@ -38,6 +40,7 @@ namespace MaxDB
         static Sql()
         {
             CurrentDatabase = null;
+            Output = new List<string>();
             Digests = new List<string>();
             Digest = null;
         }
@@ -109,7 +112,7 @@ namespace MaxDB
                 string command = GetNextDigestSegment(' ');
                 Digest = Digest.Replace("(", " (");
 
-                switch (command)
+                switch (command.ToLower())
                 {
                     case "create":
                         Create();
@@ -128,13 +131,20 @@ namespace MaxDB
                         break;
 
                     case "insert":
-                        if (GetNextDigestSegment(' ') == "into")
+                        if (CurrentDatabase != null)
                         {
-                            Insert();
+                            if (GetNextDigestSegment(' ').ToLower() == "into")
+                            {
+                                Insert();
+                            }
+                            else
+                            {
+                                Console.WriteLine("Syntax Error!");
+                            }
                         }
                         else
                         {
-                            Console.WriteLine("Syntax Error!");
+                            Console.WriteLine("Please select a database first.");
                         }
                         break;
                 }
@@ -145,29 +155,92 @@ namespace MaxDB
         {
             string tableName = GetNextDigestSegment(' ');
             Table table = CurrentDatabase.GetTable(tableName);
-            string context = null;
 
-            if (BeginScope('('))
+            if (table != null)
             {
-                context = "";
+                string context = null;
+
+                if (BeginScope('('))
+                {
+                    context = "";
+                }
+                else
+                {
+                    context = GetNextDigestSegment(' ');
+                }
+
+                switch (context.ToLower())
+                {
+                    case "values":
+                        InsertValues(table, table.Columns.Select(s => s.Name).ToList());
+                        break;
+                }
             }
             else
             {
-                context = GetNextDigestSegment(' ');
+                Console.WriteLine("No table named " + tableName + " exists!");
+            }
+        }
+
+        private static void InsertValues(Table table, List<string> columnNames)
+        {
+            if (ContainsScope('(', ')') && BeginScope('('))
+            {
+                SwitchDigestScope('(', ')');
+                Digest = Digest + ",";
+                int fieldsDigestIndex = Digests.IndexOf(Digest);
+                List<string> fieldStrings = new List<string>();
+
+                while (Digests.Count > fieldsDigestIndex)
+                {
+                    if (Digest.Contains(','))
+                    {
+                        string fieldString = GetNextDigestSegment(',');
+                        fieldStrings.Add(fieldString);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Syntax Error!");
+                    }
+                }
+
+                Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
+
+                foreach (string columnName in columnNames)
+                {
+                    string fieldString = fieldStrings.FirstOrDefault();
+                    fieldDictionary.Add(columnName, fieldString);
+                    fieldStrings.Remove(fieldString);
+                }
+
+                table.CreateRow(fieldDictionary);
+
+                table.ToOutput();
+
+                PrintOutputToConsole();
+
+                columnNames.Remove(columnNames.FirstOrDefault());
+
+                Table tempTable = table.Select(table.GetColumns(columnNames));
+
+                Output.Clear();
+
+                tempTable.ToOutput();
+
+                PrintOutputToConsole();
+            }
+            else
+            {
+                Console.WriteLine("Syntax Error!");
             }
 
-            switch (context)
-            {
-                case "values":
-                    break;
-            }
         }
 
         private static void Show()
         {
             string context = GetNextDigestSegment(' ');
 
-            switch (context)
+            switch (context.ToLower())
             {
                 case "databases":
                     DatabaseCollection.ShowDatabases();
@@ -189,15 +262,19 @@ namespace MaxDB
         private static void Use()
         {
             string databaseName = GetNextDigestSegment(' ');
-
             CurrentDatabase = DatabaseCollection.GetDatabase(databaseName);
+
+            if (CurrentDatabase == null)
+            {
+                Console.WriteLine("No database named " + databaseName + " exists!");
+            }
         }
 
         private static void Create()
         {
             string context = GetNextDigestSegment(' ');
 
-            switch (context)
+            switch (context.ToLower())
             {
                 case "database":
                     DatabaseCollection.CreateDatabase(GetNextDigestSegment(' '));
@@ -270,27 +347,35 @@ namespace MaxDB
             int scopeStartCharIndex = 0;
             int scopeEndCharIndex = 0;
 
-            for (int i = 0; i < Digest.Length; i++)
+            if (scopeStartChar != scopeEndChar)
             {
-                if (Digest[i] == scopeStartChar)
+                for (int i = 0; i < Digest.Length; i++)
                 {
-                    if (scopeStartCharCount == 0)
+                    if (Digest[i] == scopeStartChar)
                     {
-                        scopeStartCharIndex = i;
+                        if (scopeStartCharCount == 0)
+                        {
+                            scopeStartCharIndex = i;
+                        }
+
+                        scopeStartCharCount++;
+                    }
+                    else if (Digest[i] == scopeEndChar)
+                    {
+                        scopeStartCharCount--;
                     }
 
-                    scopeStartCharCount++;
+                    if (scopeStartCharCount == 0)
+                    {
+                        scopeEndCharIndex = i;
+                        break;
+                    }
                 }
-                else if (Digest[i] == scopeEndChar)
-                {
-                    scopeStartCharCount--;
-                }
-
-                if (scopeStartCharCount == 0)
-                {
-                    scopeEndCharIndex = i;
-                    break;
-                }
+            }
+            else
+            {
+                scopeStartCharIndex = Digest.IndexOf('\'');
+                scopeEndCharIndex = Digest.Substring(scopeStartCharIndex + 1).IndexOf('\'') + scopeStartCharIndex + 1;
             }
 
             scope = Digest.Substring(scopeStartCharIndex + 1, scopeEndCharIndex - 1).Trim();
@@ -317,10 +402,10 @@ namespace MaxDB
                 {
                     containsScope = true;
                 }
-                else if (Digest.Substring(Digest.IndexOf(scopeStartChar) + 1).Contains(scopeEndChar))
-                {
-                    containsScope = true;
-                }
+            }
+            else if (Digest.Substring(Digest.IndexOf(scopeStartChar) + 1).Contains(scopeEndChar))
+            {
+                containsScope = true;
             }
 
             return containsScope;
@@ -342,7 +427,7 @@ namespace MaxDB
         {
             string context = GetNextDigestSegment(' ');
 
-            switch (context)
+            switch (context.ToLower())
             {
                 case "database":
                     DatabaseCollection.DropDatabase(GetNextDigestSegment(' '));
@@ -358,6 +443,14 @@ namespace MaxDB
                         Console.WriteLine("Please select a database first.");
                     }
                     break;
+            }
+        }
+
+        public static void PrintOutputToConsole()
+        {
+            foreach(string line in Output)
+            {
+                Console.WriteLine(line);
             }
         }
     }

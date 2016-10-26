@@ -9,5 +9,10 @@ namespace MaxDB
     public class Field
     {
         public string Data { get; set; }
+
+        public Field(string data)
+        {
+            Data = data;
+        }
     }
 }

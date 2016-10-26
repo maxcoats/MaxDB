@@ -20,5 +20,9 @@ namespace MaxDB
             DataType = dataType;
             Size = size;
         }
+
+        public void Print()
+        {
+        }
     }
 }
