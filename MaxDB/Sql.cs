@@ -111,6 +111,7 @@ namespace MaxDB
             {
                 string command = GetNextDigestSegment(' ');
                 Digest = Digest.Replace("(", " (");
+                Digest = Digest.Replace(",", ", ");
 
                 switch (command.ToLower())
                 {
@@ -147,6 +148,49 @@ namespace MaxDB
                             Console.WriteLine("Please select a database first.");
                         }
                         break;
+
+                    case "select":
+                        if (CurrentDatabase != null)
+                        {
+                            Select();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Please select a database first.");
+                        }
+                        break;
+                }
+            }
+        }
+
+        private static void Select()
+        {
+            List<string> columnNames = new List<string>();
+            string nextDigestSegment = "";
+
+            while ((nextDigestSegment = GetNextDigestSegment(' ').Trim(',')).ToLower() != "from")
+            {
+                columnNames.Add(nextDigestSegment);
+            }
+
+            if (columnNames.Count > 0)
+            {
+                if (nextDigestSegment.ToLower() == "from")
+                {
+                    string tableName = GetNextDigestSegment(' ');
+                    Table table = CurrentDatabase.GetTable(tableName);
+
+                    if (columnNames.FirstOrDefault() == "*")
+                    {
+                        table.ToOutput();
+                        PrintOutputToConsole();
+                    }
+                    else
+                    {
+                        Table tempTaple = table.Select(table.GetColumns(columnNames));
+                        tempTaple.ToOutput();
+                        PrintOutputToConsole();
+                    }
                 }
             }
         }
@@ -187,7 +231,7 @@ namespace MaxDB
             if (ContainsScope('(', ')') && BeginScope('('))
             {
                 SwitchDigestScope('(', ')');
-                Digest = Digest + ",";
+                Digest += ",";
                 int fieldsDigestIndex = Digests.IndexOf(Digest);
                 List<string> fieldStrings = new List<string>();
 
@@ -214,20 +258,6 @@ namespace MaxDB
                 }
 
                 table.CreateRow(fieldDictionary);
-
-                table.ToOutput();
-
-                PrintOutputToConsole();
-
-                columnNames.Remove(columnNames.FirstOrDefault());
-
-                Table tempTable = table.Select(table.GetColumns(columnNames));
-
-                Output.Clear();
-
-                tempTable.ToOutput();
-
-                PrintOutputToConsole();
             }
             else
             {
@@ -290,7 +320,7 @@ namespace MaxDB
                         if (ContainsScope('(', ')') && BeginScope('('))
                         {
                             SwitchDigestScope('(', ')');
-                            Digest = Digest + ",";
+                            Digest += ",";
                             int columnsDigestIndex = Digests.IndexOf(Digest);
 
                             while (Digests.Count > columnsDigestIndex)
@@ -452,6 +482,8 @@ namespace MaxDB
             {
                 Console.WriteLine(line);
             }
+
+            Output.Clear();
         }
     }
 }

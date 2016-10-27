@@ -71,21 +71,46 @@ namespace MaxDB
             }
         }
 
-        public void DropColumn(string name)
+        public void DropColumn(Column column)
         {
-            Column column = GetColumn(name);
-
             if (column != null)
             {
-                Columns.Remove(column);
                 foreach (Row row in Rows)
                 {
                     row.DropField(column);
                 }
+
+                Columns.Remove(column);
             }
             else
             {
-                Console.WriteLine("Failed to drop column " + name + "!");
+                Console.WriteLine("Failed to drop column!");
+            }
+        }
+
+        public void DropColumns(List<Column> columns)
+        {
+            bool firstIteration = true;
+
+            foreach (Row row in Rows)
+            {
+                foreach (Column column in columns)
+                {
+                    if (column != null)
+                    {
+                        row.DropField(column);
+                        if (firstIteration)
+                        {
+                            Columns.Remove(column);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Failed to drop column!");
+                    }
+                }
+
+                firstIteration = false;
             }
         }
 
@@ -133,45 +158,44 @@ namespace MaxDB
             Rows.Add(row);
         }
 
-        public void DropRow(int number)
+        public void DropRow(Row row)
         {
-            Row row = GetRow(number);
-
             if (row != null)
             {
                 Rows.Remove(row);
             }
             else
             {
-                Console.WriteLine("Failed to drop row! A row number " + number + " could not be found.");
+                Console.WriteLine("Failed to drop row!");
             }
         }
 
         public Row GetRow(int number)
         {
-            return Rows.Where(s => s.Number == number).FirstOrDefault();
+            Row row = Rows.Where(s => s.Number == number).FirstOrDefault();
+
+            if (row == null)
+            {
+                Console.WriteLine("Failed to find row " + number + "!");
+            }
+
+            return row;
         }
 
         public Table Select(List<Column> columns)
         {
             Table table = Copy();
-            List<Column> removeColumns = new List<Column>();
+            List<Column> dropColumns = new List<Column>();
             
             foreach (Column column in table.Columns)
             {
                 if (columns.Where(s => s.Name == column.Name).FirstOrDefault() == null)
                 {
-                    removeColumns.Add(column);
+                    dropColumns.Add(column);
                 }
             }
 
-            foreach (Row row in table.Rows)
-            {
-                foreach (Column column in removeColumns)
-                {
-                    row.DropField(column);
-                }
-            }
+            table.DropColumns(dropColumns);
 
             return table;
         }
