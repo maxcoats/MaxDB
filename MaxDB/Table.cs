@@ -21,43 +21,6 @@ namespace MaxDB
             Rows = new List<Row>();
         }
 
-        public Table Copy()
-        {
-            Table table = new Table(Name);
-
-            foreach (Column column in Columns)
-            {
-                table.CreateColumn(column.Name, column.DataType, column.Size);
-            }
-
-            foreach (Row row in Rows)
-            {
-                Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
-
-                foreach (Column column in Columns)
-                {
-                    fieldDictionary.Add(column.Name, row.GetField(column).Data);
-                }
-
-                table.CreateRow(fieldDictionary);
-            }
-
-            return table;
-        }
-
-        public bool IsColumn(string name)
-        {
-            bool isColumn = false;
-            Column column = Columns.Where(s => s.Name == name).FirstOrDefault();
-
-            if (column != null)
-            {
-                isColumn = true;
-            }
-
-            return isColumn;
-        }
-
         public void CreateColumn(string name, string dataType, int size)
         {
             if (!IsColumn(name))
@@ -143,6 +106,19 @@ namespace MaxDB
             return columns;
         }
 
+        public bool IsColumn(string name)
+        {
+            bool isColumn = false;
+            Column column = Columns.Where(s => s.Name == name).FirstOrDefault();
+
+            if (column != null)
+            {
+                isColumn = true;
+            }
+
+            return isColumn;
+        }
+
         public void CreateRow(Dictionary<string, string> fieldDictionary)
         {
             int rowNumber = Rows.Select(s => s.Number).LastOrDefault();
@@ -151,6 +127,12 @@ namespace MaxDB
             foreach (KeyValuePair<string, string> fieldKeyValuePair in fieldDictionary)
             {
                 Column column = GetColumn(fieldKeyValuePair.Key);
+
+                if (column.MaxFieldSize < fieldKeyValuePair.Value.Length)
+                {
+                    column.MaxFieldSize = fieldKeyValuePair.Value.Length;
+                }
+
                 Field field = new Field(fieldKeyValuePair.Value);
                 row.CreateField(column, field);
             }
@@ -184,18 +166,66 @@ namespace MaxDB
 
         public Table Select(List<Column> columns)
         {
-            Table table = Copy();
-            List<Column> dropColumns = new List<Column>();
-            
-            foreach (Column column in table.Columns)
+            return Copy(columns);
+        }
+
+        public Table Copy()
+        {
+            Table table = new Table(Name);
+
+            foreach (Column column in Columns)
             {
-                if (columns.Where(s => s.Name == column.Name).FirstOrDefault() == null)
+                table.CreateColumn(column.Name, column.DataType, column.Size);
+            }
+
+            foreach (Row row in Rows)
+            {
+                Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
+
+                foreach (Column column in Columns)
                 {
-                    dropColumns.Add(column);
+                    fieldDictionary.Add(column.Name, row.GetField(column).Data);
+                }
+
+                table.CreateRow(fieldDictionary);
+            }
+
+            return table;
+        }
+
+        public Table Copy(List<Column> columns)
+        {
+            Table table = new Table(Name);
+
+            foreach (Column column in columns)
+            {
+                Column copyColumn = GetColumn(column.Name);
+
+                if (copyColumn != null)
+                {
+                    table.CreateColumn(copyColumn.Name, copyColumn.DataType, copyColumn.Size);
                 }
             }
 
-            table.DropColumns(dropColumns);
+            foreach (Row row in Rows)
+            {
+                Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
+
+                foreach (Column column in columns)
+                {
+                    Column copyColumn = GetColumn(column.Name);
+
+                    if (copyColumn != null)
+                    {
+                        fieldDictionary.Add(copyColumn.Name, row.GetField(copyColumn).Data);
+                    }
+                }
+
+                if (fieldDictionary.Count > 0)
+                {
+                    table.CreateRow(fieldDictionary);
+                }
+            }
 
             return table;
         }
@@ -203,11 +233,15 @@ namespace MaxDB
         public void ToOutput()
         {
             string line = "";
-            Sql.Output.Add(ColumRowDivider());
+
+            if (Columns.Count > 0)
+            {
+                Sql.Output.Add(ColumRowDivider());
+            }
 
             foreach (Column column in Columns)
             {
-                int size = column.Size > column.Name.Length ? column.Size : column.Name.Length;
+                int size = column.GetSizeToOutput();
                 line += "|" + column.Name;
 
                 for (int i = column.Name.Length; i < size; i++)
@@ -216,9 +250,12 @@ namespace MaxDB
                 }
             }
 
-            line += "|";
-            Sql.Output.Add(line);
-            Sql.Output.Add(ColumRowDivider());
+            if (Columns.Count > 0)
+            {
+                line += "|";
+                Sql.Output.Add(line);
+                Sql.Output.Add(ColumRowDivider());
+            }
 
             foreach (Row row in Rows)
             {
@@ -226,7 +263,7 @@ namespace MaxDB
 
                 foreach (Column column in Columns)
                 {
-                    int size = column.Size > column.Name.Length ? column.Size : column.Name.Length;
+                    int size = column.GetSizeToOutput();
                     line += "|" + row.GetField(column).Data;
 
                     for (int i = row.GetField(column).Data.Length; i < size; i++)
@@ -247,7 +284,7 @@ namespace MaxDB
 
             foreach (Column column in Columns)
             {
-                int size = column.Size > column.Name.Length ? column.Size : column.Name.Length;
+                int size = column.GetSizeToOutput();
                 line += "+";
 
                 for (int i = 0; i < size; i++)
@@ -256,7 +293,10 @@ namespace MaxDB
                 }
             }
 
-            line += "+";
+            if (Columns.Count > 0)
+            {
+                line += "+";
+            }
 
             return line;
         }

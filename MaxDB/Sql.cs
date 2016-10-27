@@ -109,9 +109,9 @@ namespace MaxDB
 
             if (Digest != null)
             {
-                string command = GetNextDigestSegment(' ');
                 Digest = Digest.Replace("(", " (");
                 Digest = Digest.Replace(",", ", ");
+                string command = GetNextDigestSegment(' ');
 
                 switch (command.ToLower())
                 {
@@ -180,16 +180,19 @@ namespace MaxDB
                     string tableName = GetNextDigestSegment(' ');
                     Table table = CurrentDatabase.GetTable(tableName);
 
-                    if (columnNames.FirstOrDefault() == "*")
+                    if (table != null)
                     {
-                        table.ToOutput();
-                        PrintOutputToConsole();
-                    }
-                    else
-                    {
-                        Table tempTaple = table.Select(table.GetColumns(columnNames));
-                        tempTaple.ToOutput();
-                        PrintOutputToConsole();
+                        if (columnNames.FirstOrDefault() == "*")
+                        {
+                            table.ToOutput();
+                            PrintOutputToConsole();
+                        }
+                        else
+                        {
+                            Table tempTaple = table.Select(table.GetColumns(columnNames));
+                            tempTaple.ToOutput();
+                            PrintOutputToConsole();
+                        }
                     }
                 }
             }

@@ -14,15 +14,22 @@ namespace MaxDB
 
         public int Size { get; set; }
 
+        public int MaxFieldSize { get; set; }
+
         public Column(string name, string dataType, int size)
         {
             Name = name;
             DataType = dataType;
             Size = size;
+            MaxFieldSize = 0;
         }
 
-        public void Print()
+        public int GetSizeToOutput()
         {
+            int size = MaxFieldSize < Size ? MaxFieldSize : Size;
+            size = Name.Length > size ? Name.Length : size;
+
+            return size;
         }
     }
 }
