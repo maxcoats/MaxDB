@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace MaxDB
 {
-    public static class Sql
+    public static class DatabaseEngine
     {
         public static Database CurrentDatabase { get; set; }
 
-        public static List<string> Output { get; set; }
+        public static List<string> DisplayBuffer { get; set; }
 
         public static List<string> Digests { get; set; }
 
@@ -19,6 +19,12 @@ namespace MaxDB
             get
             {
                 string currentDigest = Digests.LastOrDefault();
+
+                if (currentDigest == null)
+                {
+                    currentDigest = "";
+                }
+
                 return currentDigest;
             }
             set
@@ -37,10 +43,10 @@ namespace MaxDB
             }
         }
 
-        static Sql()
+        static DatabaseEngine()
         {
             CurrentDatabase = null;
-            Output = new List<string>();
+            DisplayBuffer = new List<string>();
             Digests = new List<string>();
             Digest = null;
         }
@@ -184,14 +190,14 @@ namespace MaxDB
                     {
                         if (columnNames.FirstOrDefault() == "*")
                         {
-                            table.ToOutput();
-                            PrintOutputToConsole();
+                            table.ToDisplayBuffer();
+                            DisplayBufferToConsole();
                         }
                         else
                         {
                             Table tempTaple = table.Select(table.GetColumns(columnNames));
-                            tempTaple.ToOutput();
-                            PrintOutputToConsole();
+                            tempTaple.ToDisplayBuffer();
+                            DisplayBufferToConsole();
                         }
                     }
                 }
@@ -479,14 +485,14 @@ namespace MaxDB
             }
         }
 
-        public static void PrintOutputToConsole()
+        public static void DisplayBufferToConsole()
         {
-            foreach(string line in Output)
+            foreach(string line in DisplayBuffer)
             {
                 Console.WriteLine(line);
             }
 
-            Output.Clear();
+            DisplayBuffer.Clear();
         }
     }
 }

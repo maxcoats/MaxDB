@@ -230,13 +230,13 @@ namespace MaxDB
             return table;
         }
 
-        public void ToOutput()
+        public void ToDisplayBuffer()
         {
             string line = "";
 
             if (Columns.Count > 0)
             {
-                Sql.Output.Add(ColumRowDivider());
+                DatabaseEngine.DisplayBuffer.Add(ColumRowDivider());
             }
 
             foreach (Column column in Columns)
@@ -253,8 +253,8 @@ namespace MaxDB
             if (Columns.Count > 0)
             {
                 line += "|";
-                Sql.Output.Add(line);
-                Sql.Output.Add(ColumRowDivider());
+                DatabaseEngine.DisplayBuffer.Add(line);
+                DatabaseEngine.DisplayBuffer.Add(ColumRowDivider());
             }
 
             foreach (Row row in Rows)
@@ -273,8 +273,8 @@ namespace MaxDB
                 }
 
                 line += "|";
-                Sql.Output.Add(line);
-                Sql.Output.Add(ColumRowDivider());
+                DatabaseEngine.DisplayBuffer.Add(line);
+                DatabaseEngine.DisplayBuffer.Add(ColumRowDivider());
             }
         }
 

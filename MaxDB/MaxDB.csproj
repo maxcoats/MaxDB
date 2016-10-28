@@ -50,7 +50,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Row.cs" />
     <Compile Include="Field.cs" />
-    <Compile Include="Sql.cs" />
+    <Compile Include="DatabaseEngine.cs" />
     <Compile Include="Table.cs" />
   </ItemGroup>
   <ItemGroup>
