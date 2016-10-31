@@ -344,7 +344,7 @@ namespace MaxDB
                                     string columnString = GetNextDigestSegment(',');
                                     Digests.Add(columnString);
                                     string columnName = GetNextDigestSegment(' ');
-                                    string columnDataType = GetNextDigestSegment(' ');
+                                    string columnDataType = GetNextDigestSegment(' ').ToLower();
                                     int columnSize = 0;
 
                                     if (ContainsScope('(', ')') && BeginScope('('))

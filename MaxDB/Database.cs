@@ -74,15 +74,39 @@ namespace MaxDB
         {
             if (Tables.Count > 0)
             {
-                foreach (Table table in Tables)
-                {
-                    Console.WriteLine(table.Name);
-                }
+                Table table = ToTable();
+                table.ToDisplayBuffer();
             }
             else
             {
-                Console.WriteLine("No Tables found!");
+                DatabaseEngine.DisplayBuffer.Add("No Tables found!");
             }
+
+            DatabaseEngine.DisplayBufferToConsole();
+        }
+
+        public Table ToTable()
+        {
+            Table table = new Table("Tables");
+            table.CreateColumn("Table", "varchar", 255);
+            List<string> fieldStrings = new List<string>();
+
+            foreach (Table itable in Tables)
+            {
+                fieldStrings.Add(itable.Name);
+            }
+
+            foreach (string fieldString in fieldStrings)
+            {
+                foreach (Column column in table.Columns)
+                {
+                    Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
+                    fieldDictionary.Add(column.Name, fieldString);
+                    table.CreateRow(fieldDictionary);
+                }
+            }
+
+            return table;
         }
     }
 }

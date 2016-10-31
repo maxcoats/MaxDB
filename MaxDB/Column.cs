@@ -31,5 +31,10 @@ namespace MaxDB
 
             return size;
         }
+
+        public bool TypeCheck(string value)
+        {
+            return true;
+        }
     }
 }

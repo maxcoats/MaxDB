@@ -122,22 +122,44 @@ namespace MaxDB
         public void CreateRow(Dictionary<string, string> fieldDictionary)
         {
             int rowNumber = Rows.Select(s => s.Number).LastOrDefault();
-            Row row = new Row(rowNumber);
+            Row row = new Row(++rowNumber);
+            bool addRow = true;
 
             foreach (KeyValuePair<string, string> fieldKeyValuePair in fieldDictionary)
             {
+                string value = fieldKeyValuePair.Value;
                 Column column = GetColumn(fieldKeyValuePair.Key);
 
-                if (column.MaxFieldSize < fieldKeyValuePair.Value.Length)
+                if (column.TypeCheck(value))
                 {
-                    column.MaxFieldSize = fieldKeyValuePair.Value.Length;
-                }
+                    if (column.DataType == "varchar")
+                    {
+                        value = value.Trim('\'');
+                    }
 
-                Field field = new Field(fieldKeyValuePair.Value);
-                row.CreateField(column, field);
+                    if (column.Size < value.Length)
+                    {
+                        value = value.Substring(0, column.Size);
+                    }
+
+                    if (column.MaxFieldSize < value.Length)
+                    {
+                        column.MaxFieldSize = value.Length;
+                    }
+
+                    Field field = new Field(value);
+                    row.CreateField(column, field);
+                }
+                else
+                {
+                    addRow = false;
+                }
             }
 
-            Rows.Add(row);
+            if (addRow)
+            {
+                Rows.Add(row);
+            }
         }
 
         public void DropRow(Row row)
