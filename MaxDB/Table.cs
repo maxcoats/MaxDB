@@ -21,11 +21,11 @@ namespace MaxDB
             Rows = new List<Row>();
         }
 
-        public void CreateColumn(string name, string dataType, int size)
+        public void CreateColumn(string name, string dataItemType, int size)
         {
             if (!IsColumn(name))
             {
-                Column column = new Column(name, dataType, size);
+                Column column = new Column(name, dataItemType, size);
                 Columns.Add(column);
             }
             else
@@ -40,7 +40,7 @@ namespace MaxDB
             {
                 foreach (Row row in Rows)
                 {
-                    row.DropField(column);
+                    row.DropDataItem(column);
                 }
 
                 Columns.Remove(column);
@@ -61,7 +61,7 @@ namespace MaxDB
                 {
                     if (column != null)
                     {
-                        row.DropField(column);
+                        row.DropDataItem(column);
                         if (firstIteration)
                         {
                             Columns.Remove(column);
@@ -119,20 +119,20 @@ namespace MaxDB
             return isColumn;
         }
 
-        public void CreateRow(Dictionary<string, string> fieldDictionary)
+        public void CreateRow(Dictionary<string, string> dataItemDictionary)
         {
             int rowNumber = Rows.Select(s => s.Number).LastOrDefault();
             Row row = new Row(++rowNumber);
             bool addRow = true;
 
-            foreach (KeyValuePair<string, string> fieldKeyValuePair in fieldDictionary)
+            foreach (KeyValuePair<string, string> dataItemKeyValuePair in dataItemDictionary)
             {
-                string value = fieldKeyValuePair.Value;
-                Column column = GetColumn(fieldKeyValuePair.Key);
+                string value = dataItemKeyValuePair.Value;
+                Column column = GetColumn(dataItemKeyValuePair.Key);
 
                 if (column.TypeCheck(value))
                 {
-                    if (column.DataType == "varchar")
+                    if (column.DataItemType == "varchar")
                     {
                         value = value.Trim('\'');
                     }
@@ -142,13 +142,13 @@ namespace MaxDB
                         value = value.Substring(0, column.Size);
                     }
 
-                    if (column.MaxFieldSize < value.Length)
+                    if (column.MaxDataItemSize < value.Length)
                     {
-                        column.MaxFieldSize = value.Length;
+                        column.MaxDataItemSize = value.Length;
                     }
 
-                    Field field = new Field(value);
-                    row.CreateField(column, field);
+                    DataItem dataItem = new DataItem(value);
+                    row.CreateDataItem(column, dataItem);
                 }
                 else
                 {
@@ -197,19 +197,19 @@ namespace MaxDB
 
             foreach (Column column in Columns)
             {
-                table.CreateColumn(column.Name, column.DataType, column.Size);
+                table.CreateColumn(column.Name, column.DataItemType, column.Size);
             }
 
             foreach (Row row in Rows)
             {
-                Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
+                Dictionary<string, string> dataItemDictionary = new Dictionary<string, string>();
 
                 foreach (Column column in Columns)
                 {
-                    fieldDictionary.Add(column.Name, row.GetField(column).Data);
+                    dataItemDictionary.Add(column.Name, row.GetDataItem(column).Value);
                 }
 
-                table.CreateRow(fieldDictionary);
+                table.CreateRow(dataItemDictionary);
             }
 
             return table;
@@ -225,13 +225,13 @@ namespace MaxDB
 
                 if (copyColumn != null)
                 {
-                    table.CreateColumn(copyColumn.Name, copyColumn.DataType, copyColumn.Size);
+                    table.CreateColumn(copyColumn.Name, copyColumn.DataItemType, copyColumn.Size);
                 }
             }
 
             foreach (Row row in Rows)
             {
-                Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
+                Dictionary<string, string> dataItemDictionary = new Dictionary<string, string>();
 
                 foreach (Column column in columns)
                 {
@@ -239,13 +239,13 @@ namespace MaxDB
 
                     if (copyColumn != null)
                     {
-                        fieldDictionary.Add(copyColumn.Name, row.GetField(copyColumn).Data);
+                        dataItemDictionary.Add(copyColumn.Name, row.GetDataItem(copyColumn).Value);
                     }
                 }
 
-                if (fieldDictionary.Count > 0)
+                if (dataItemDictionary.Count > 0)
                 {
-                    table.CreateRow(fieldDictionary);
+                    table.CreateRow(dataItemDictionary);
                 }
             }
 
@@ -286,9 +286,9 @@ namespace MaxDB
                 foreach (Column column in Columns)
                 {
                     int size = column.GetSizeToOutput();
-                    line += "|" + row.GetField(column).Data;
+                    line += "|" + row.GetDataItem(column).Value;
 
-                    for (int i = row.GetField(column).Data.Length; i < size; i++)
+                    for (int i = row.GetDataItem(column).Value.Length; i < size; i++)
                     {
                         line += " ";
                     }

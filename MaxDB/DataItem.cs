@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace MaxDB
 {
-    public class Field
+    public class DataItem
     {
-        public string Data { get; set; }
+        public string Value { get; set; }
 
-        public Field(string data)
+        public DataItem(string value)
         {
-            Data = data;
+            Value = value;
         }
     }
 }

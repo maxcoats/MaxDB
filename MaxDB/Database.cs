@@ -89,20 +89,20 @@ namespace MaxDB
         {
             Table table = new Table("Tables");
             table.CreateColumn("Table", "varchar", 255);
-            List<string> fieldStrings = new List<string>();
+            List<string> dataItemStrings = new List<string>();
 
             foreach (Table itable in Tables)
             {
-                fieldStrings.Add(itable.Name);
+                dataItemStrings.Add(itable.Name);
             }
 
-            foreach (string fieldString in fieldStrings)
+            foreach (string dataItemString in dataItemStrings)
             {
                 foreach (Column column in table.Columns)
                 {
-                    Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
-                    fieldDictionary.Add(column.Name, fieldString);
-                    table.CreateRow(fieldDictionary);
+                    Dictionary<string, string> dataItemDictionary = new Dictionary<string, string>();
+                    dataItemDictionary.Add(column.Name, dataItemString);
+                    table.CreateRow(dataItemDictionary);
                 }
             }
 

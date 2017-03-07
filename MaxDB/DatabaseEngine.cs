@@ -241,15 +241,15 @@ namespace MaxDB
             {
                 SwitchDigestScope('(', ')');
                 Digest += ",";
-                int fieldsDigestIndex = Digests.IndexOf(Digest);
-                List<string> fieldStrings = new List<string>();
+                int dataItemsDigestIndex = Digests.IndexOf(Digest);
+                List<string> dataItemStrings = new List<string>();
 
-                while (Digests.Count > fieldsDigestIndex)
+                while (Digests.Count > dataItemsDigestIndex)
                 {
                     if (Digest.Contains(','))
                     {
-                        string fieldString = GetNextDigestSegment(',');
-                        fieldStrings.Add(fieldString);
+                        string dataItemString = GetNextDigestSegment(',');
+                        dataItemStrings.Add(dataItemString);
                     }
                     else
                     {
@@ -257,16 +257,16 @@ namespace MaxDB
                     }
                 }
 
-                Dictionary<string, string> fieldDictionary = new Dictionary<string, string>();
+                Dictionary<string, string> dataItemDictionary = new Dictionary<string, string>();
 
                 foreach (string columnName in columnNames)
                 {
-                    string fieldString = fieldStrings.FirstOrDefault();
-                    fieldDictionary.Add(columnName, fieldString);
-                    fieldStrings.Remove(fieldString);
+                    string dataItemString = dataItemStrings.FirstOrDefault();
+                    dataItemDictionary.Add(columnName, dataItemString);
+                    dataItemStrings.Remove(dataItemString);
                 }
 
-                table.CreateRow(fieldDictionary);
+                table.CreateRow(dataItemDictionary);
             }
             else
             {

@@ -10,27 +10,27 @@ namespace MaxDB
     {
         public int Number { get; set; }
 
-        public Dictionary<Column, Field> Fields { get; set; }
+        public Dictionary<Column, DataItem> DataItems { get; set; }
 
         public Row(int number)
         {
             Number = number;
-            Fields = new Dictionary<Column, Field>();
+            DataItems = new Dictionary<Column, DataItem>();
         }
 
-        public void CreateField(Column column, Field field)
+        public void CreateDataItem(Column column, DataItem dataItem)
         {
-            Fields.Add(column, field);
+            DataItems.Add(column, dataItem);
         }
 
-        public void DropField(Column column)
+        public void DropDataItem(Column column)
         {
-            Fields.Remove(column);
+            DataItems.Remove(column);
         }
 
-        public Field GetField(Column column)
+        public DataItem GetDataItem(Column column)
         {
-            return Fields[column];
+            return DataItems[column];
         }
     }
 }

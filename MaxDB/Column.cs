@@ -10,23 +10,23 @@ namespace MaxDB
     {
         public string Name { get; set; }
 
-        public string DataType { get; set; }
+        public string DataItemType { get; set; }
 
         public int Size { get; set; }
 
-        public int MaxFieldSize { get; set; }
+        public int MaxDataItemSize { get; set; }
 
-        public Column(string name, string dataType, int size)
+        public Column(string name, string dataItemType, int size)
         {
             Name = name;
-            DataType = dataType;
+            DataItemType = dataItemType;
             Size = size;
-            MaxFieldSize = 0;
+            MaxDataItemSize = 0;
         }
 
         public int GetSizeToOutput()
         {
-            int size = MaxFieldSize < Size ? MaxFieldSize : Size;
+            int size = MaxDataItemSize < Size ? MaxDataItemSize : Size;
             size = Name.Length > size ? Name.Length : size;
 
             return size;
