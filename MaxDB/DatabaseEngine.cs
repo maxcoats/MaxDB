@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MaxDB.Utilities;
 
 namespace MaxDB
 {
     public static class DatabaseEngine
     {
+        public static DatabaseCollection DatabaseCollection { get; set; }
+
         public static Database CurrentDatabase { get; set; }
 
         public static List<string> DisplayBuffer { get; set; }
@@ -45,6 +48,7 @@ namespace MaxDB
 
         static DatabaseEngine()
         {
+            DatabaseCollection = new DatabaseCollection();
             CurrentDatabase = null;
             DisplayBuffer = new List<string>();
             Digests = new List<string>();
@@ -123,10 +127,12 @@ namespace MaxDB
                 {
                     case "create":
                         Create();
+                        StorageUtility.WriteDatabaseCollectionToDisk(DatabaseCollection.Databases);
                         break;
 
                     case "drop":
                         Drop();
+                        StorageUtility.WriteDatabaseCollectionToDisk(DatabaseCollection.Databases);
                         break;
 
                     case "use":
@@ -143,6 +149,7 @@ namespace MaxDB
                             if (GetNextDigestSegment(' ').ToLower() == "into")
                             {
                                 Insert();
+                                StorageUtility.WriteDatabaseCollectionToDisk(DatabaseCollection.Databases);
                             }
                             else
                             {

@@ -3,19 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MaxDB.Utilities;
+using Newtonsoft.Json;
 
 namespace MaxDB
 {
-    public static class DatabaseCollection
+    public class DatabaseCollection
     {
-        public static List<Database> Databases { get; set; }
+        public List<Database> Databases { get; set; }
 
-        static DatabaseCollection()
+        public DatabaseCollection()
         {
-            Databases = new List<Database>();
+            Databases = StorageUtility.ReadDatabaseCollectionFromDisk();
         }
 
-        public static bool IsDatabase(string name)
+        public bool IsDatabase(string name)
         {
             bool isDatabase = false;
             Database database = Databases.Where(s => s.Name == name).FirstOrDefault();
@@ -28,12 +30,13 @@ namespace MaxDB
             return isDatabase;
         }
 
-        public static void CreateDatabase(string name)
+        public void CreateDatabase(string name)
         {
             if (!IsDatabase(name))
             {
                 Database database = new Database(name);
                 Databases.Add(database);
+                StorageUtility.WriteDatabaseCollectionToDisk(Databases);
             }
             else
             {
@@ -41,7 +44,7 @@ namespace MaxDB
             }
         }
 
-        public static void DropDatabase(string name)
+        public void DropDatabase(string name)
         {
             Database database = GetDatabase(name);
 
@@ -55,7 +58,7 @@ namespace MaxDB
             }
         }
 
-        public static Database GetDatabase(string name)
+        public Database GetDatabase(string name)
         {
             Database database = Databases.Where(s => s.Name == name).FirstOrDefault();
 
@@ -67,7 +70,7 @@ namespace MaxDB
             return database;
         }
 
-        public static void ShowDatabases()
+        public void ShowDatabases()
         {
             if (Databases.Count > 0)
             {
@@ -82,7 +85,7 @@ namespace MaxDB
             DatabaseEngine.DisplayBufferToConsole();
         }
 
-        public static Table ToTable()
+        public Table ToTable()
         {
             Table table = new Table("Databases");
             table.CreateColumn("Database", "varchar", 255);
