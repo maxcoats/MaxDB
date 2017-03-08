@@ -121,8 +121,7 @@ namespace MaxDB
 
         public void CreateRow(Dictionary<string, string> dataItemDictionary)
         {
-            int rowNumber = Rows.Select(s => s.Number).LastOrDefault();
-            Row row = new Row(++rowNumber);
+            Row row = new Row();
             bool addRow = true;
 
             foreach (KeyValuePair<string, string> dataItemKeyValuePair in dataItemDictionary)
@@ -172,18 +171,6 @@ namespace MaxDB
             {
                 Console.WriteLine("Failed to drop row!");
             }
-        }
-
-        public Row GetRow(int number)
-        {
-            Row row = Rows.Where(s => s.Number == number).FirstOrDefault();
-
-            if (row == null)
-            {
-                Console.WriteLine("Failed to find row " + number + "!");
-            }
-
-            return row;
         }
 
         public Table Select(List<Column> columns)

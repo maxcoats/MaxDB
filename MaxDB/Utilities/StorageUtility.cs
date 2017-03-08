@@ -14,7 +14,7 @@ namespace MaxDB.Utilities
 
         static StorageUtility()
         {
-            string path = Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"Data\")).FullName;
+            string path = Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.G‌​etEntryAssembly().Lo‌​cation), @"Data\")).FullName;
             DataFile = Path.Combine(path, @"maxdb.json");
         }
 

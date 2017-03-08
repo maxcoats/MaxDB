@@ -8,13 +8,10 @@ namespace MaxDB
 {
     public class Row
     {
-        public int Number { get; set; }
-
         public Dictionary<string, DataItem> DataItems { get; set; }
 
-        public Row(int number)
+        public Row()
         {
-            Number = number;
             DataItems = new Dictionary<string, DataItem>();
         }
 
