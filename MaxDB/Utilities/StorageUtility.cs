@@ -25,7 +25,12 @@ namespace MaxDB.Utilities
 
         public static List<Database> ReadDatabaseCollectionFromDisk()
         {
-            List<Database> databases = JsonConvert.DeserializeObject<List<Database>>(File.ReadAllText(DataFile));
+            List<Database> databases = new List<Database>();
+
+            if (File.Exists(DataFile))
+            {
+                databases = JsonConvert.DeserializeObject<List<Database>>(File.ReadAllText(DataFile));
+            }
 
             return databases;
         }
